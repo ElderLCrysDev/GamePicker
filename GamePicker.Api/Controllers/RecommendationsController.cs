@@ -42,6 +42,7 @@ namespace GamePicker.Api.Controllers
         [HttpGet("GetPreviousRecommendations")]
         public async Task<IActionResult> GetAllRecommendations()
         {
+            //-----PEGA LISTA PREVIA DE RECOMENDACOES NO BANCO DE DADOS-----//
             var recommendations = await _recommendationService.GetAllRecommendationsAsync();
 
             if (recommendations == null || !recommendations.Any())
@@ -49,6 +50,7 @@ namespace GamePicker.Api.Controllers
                 return NotFound("Nenhuma recomendação encontrada no banco de dados.");
             }
 
+            //-----RETORNA O TITULO E GENERO CASO HAJA GAME-----//
             var responseDtos = recommendations.Select(r => new AllRecommendationsResponseDto
             {
                 Title = r.Title,
