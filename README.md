@@ -2,7 +2,7 @@
 //------------------------------// PT - BR //------------------------------//
 "openapi": "3.0.1"
 "titulo": "GamePicker.Api"
-"versao": "1.0"
+"versao": "2.0"
 "criador": Luan Crystian Fonseca de Andrade
 "data de criacao: "17/09/2025"
 
@@ -77,7 +77,7 @@ Resposta
 //------------------------------// EN - US //------------------------------//
 "openapi": "3.0.1"
 "title": "GamePicker.Api"
-"version": "1.0"
+"version": "2.0"
 "creator": Luan Crystian Fonseca de Andrade
 "creation date: "09/17/2025"
 
