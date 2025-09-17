@@ -21,55 +21,38 @@ namespace GamePicker.Core.Services
 
         public async Task<List<Recommendation>> GetRecommendationsAsync(RecommendationRequest request)
         {
-            var allGames = await _apiClient.GetGames();
-
-            //-----FILTRO DE GENERO-----//
-            var filteredGames = allGames
-                .Where(game => request.Category.Contains(game.Genre, StringComparer.OrdinalIgnoreCase))
+            var filteredGames = (await _apiClient.GetGames())
+                //-----FILTRO DE GENERO + PLATAFORMA-----//
+                .Where(game =>
+                    request.Category.Contains(game.Genre, StringComparer.OrdinalIgnoreCase) &&
+                    (request.Platform == Platform.Both ||
+                     (request.Platform == Platform.PC && game.Platform?.IndexOf("PC", StringComparison.OrdinalIgnoreCase) >= 0) ||
+                     (request.Platform == Platform.Browser && game.Platform?.IndexOf("Browser", StringComparison.OrdinalIgnoreCase) >= 0)))
                 .ToList();
 
-            //-----FILTRO DE PLATAFORMA SELECIONADA-----//
-            switch (request.Platform)
-            {
-                case Platform.PC:
-                    filteredGames = filteredGames.Where(game => game.Platform.IndexOf("PC", StringComparison.OrdinalIgnoreCase) >= 0).ToList();
-                    break;
-                case Platform.Browser:
-                    filteredGames = filteredGames.Where(game => game.Platform.IndexOf("Browser", StringComparison.OrdinalIgnoreCase) >= 0).ToList();
-                    break;
-                default:
-                    //-----NO CASO DE BOTH NAO FAZ FILTRO-----//
-                    break;
-            }
-
-            //-----FILTRAR POR RAM DISPONIOVEL-----//
+            //-----FILTRAR POR RAM DISPONIVEL-----//
             if (request.AvailableRam.HasValue)
             {
-                var validGames = new List<GamePicker.ExternalApi.Models.GameDto>();
-
-                foreach (var game in filteredGames)
+                var detailedGames = await Task.WhenAll(filteredGames.Select(async game =>
                 {
                     var details = await _apiClient.GetGameDetails(game.Id);
-                    if (details?.MinimumSystemRequirements?.Memory != null)
-                    {
-                        var match = Regex.Match(details.MinimumSystemRequirements.Memory, @"(\d+)\s*GB");
-                        if (match.Success)
-                        {
-                            var requiredRamMb = int.Parse(match.Groups[1].Value) * 1024;
-                            if (requiredRamMb <= request.AvailableRam.Value)
-                            {
-                                validGames.Add(game);
-                            }
-                        }
-                        else
-                        {
-                            //-----CASO O VALOR DA RAM NAO ESTEJA NO FORMATO ESPERADO, ASSUME QUE E COMPATIVEL-----//
-                            validGames.Add(game);
-                        }
-                    }
-                }
+                    return new { Game = game, Details = details };
+                }));
 
-                filteredGames = validGames;
+                filteredGames = detailedGames
+                    .Where(item =>
+                    {
+                        var mem = item.Details?.MinimumSystemRequirements?.Memory;
+                        if (mem == null) return false;
+
+                        var match = Regex.Match(mem, @"(\d+)\s*GB");
+                        if (!match.Success) return true; //-----FORMATO DESCONHECIDO, ASSUME COMPATIVEL-----//
+
+                        var requiredRamMb = int.Parse(match.Groups[1].Value) * 1024;
+                        return requiredRamMb <= request.AvailableRam.Value;
+                    })
+                    .Select(item => item.Game)
+                    .ToList();
             }
 
             var recommendations = new List<Recommendation>();
@@ -78,13 +61,13 @@ namespace GamePicker.Core.Services
             {
                 //-----PEGA UM TITULO ALEATORIO-----//
                 var random = new Random();
-                var randomGame = filteredGames[random.Next(filteredGames.Count)];
+                var game = filteredGames[random.Next(filteredGames.Count)];
 
                 recommendations.Add(new Recommendation
                 {
-                    Title = randomGame.Title,
-                    Category = randomGame.Genre,
-                    Game_url = randomGame.Game_url
+                    Title = game.Title,
+                    Category = game.Genre,
+                    Game_url = game.Game_url
                 });
             }
 
