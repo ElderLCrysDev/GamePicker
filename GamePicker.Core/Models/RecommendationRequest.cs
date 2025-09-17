@@ -7,6 +7,7 @@ namespace GamePicker.Core.Models
     {
         [Required]
         public List<string> Category { get; set; }
+        [Required]
         public Platform Platform { get; set; }
         public int? AvailableRam { get; set; }
     }
