@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GamePicker.Data\GamePicker.Data.csproj" />
+    <ProjectReference Include="..\GamePicker.ExternalApi\GamePicker.ExternalApi.csproj" />
+  </ItemGroup>
+
+</Project>
